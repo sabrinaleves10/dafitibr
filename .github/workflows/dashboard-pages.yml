@@ -1,0 +1,61 @@
+# Publishes the docs preview / dashboard (.preview/) to GitHub Pages, so anyone with read
+# access to this repo can open it without cloning. See .preview/build_site.py.
+#
+# The site contains contract and client data, so it must only ever be published with
+# Pages visibility set to Private (Settings → Pages → Visibility). The "Refuse to publish
+# a public site" step below enforces that; it fails the run instead of deploying if the
+# site is public or visibility can't be confirmed.
+#
+# The job is skipped in the template repo itself (is_template): the template carries these
+# instructions but never has Pages enabled. Repos created from it have is_template false, so
+# it runs there.
+name: Dashboard (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ !github.event.repository.is_template }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse to publish a public site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! public=$(gh api "repos/${{ github.repository }}/pages" --jq '.public' 2>/dev/null); then
+            echo "::error::GitHub Pages isn't set up for this repo yet. Run the one-time setup in CLAUDE.md → \"Dashboard Publishing (GitHub Pages)\" (create with build_type=workflow, then set public=false) before publishing."
+            exit 1
+          fi
+          if [ "$public" != "false" ]; then
+            echo "::error::Pages visibility is '$public', not private. Set Settings → Pages → Visibility to Private before publishing."
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - name: Build site
+        run: python3 .preview/build_site.py _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

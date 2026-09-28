@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>vtex-client-project-template — local preview</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --pink: #f71963;
+    --pink-dim: rgba(247, 25, 99, 0.14);
+    --black: #051625;
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --border: #e3e6ea;
+    --text: #14181d;
+    --muted: #6b7280;
+    --faint: #9aa3ad;
+    --code-bg: #f1f2f4;
+    --ok-fg: #1a7f4e;
+    --ok-bg: #e6f6ee;
+    --warn-fg: #8a5a00;
+    --warn-bg: #fff4e0;
+    --warn-border: #f0c169;
+    --shadow: 0 1px 2px rgba(5, 22, 37, 0.06), 0 8px 24px rgba(5, 22, 37, 0.04);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a121c;
+      --panel: #101a26;
+      --border: #1f2c3b;
+      --text: #e7ecf1;
+      --muted: #93a0ad;
+      --faint: #5c6b7a;
+      --code-bg: #16212f;
+      --ok-fg: #4fd190;
+      --ok-bg: rgba(79, 209, 144, 0.12);
+      --warn-fg: #f0b84a;
+      --warn-bg: rgba(240, 184, 74, 0.12);
+      --warn-border: rgba(240, 184, 74, 0.35);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  ::selection { background: var(--pink-dim); }
+
+  .layout { display: grid; grid-template-columns: 264px minmax(0, 1fr) 216px; height: 100vh; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 264px minmax(0, 1fr); } .toc { display: none; } }
+  @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    background: var(--black); color: #fff; display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 8px;
+    padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+  .brand-text { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; color: #fff; }
+  .brand-text span { color: var(--pink); }
+
+  .nav-scroll { flex: 1; overflow-y: auto; padding: 10px 10px 16px; }
+  .nav-group-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.35); padding: 14px 10px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; margin: 1px 0; border-radius: 8px;
+    color: rgba(255,255,255,0.72); text-decoration: none; font-size: 13.5px;
+    cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active { background: var(--pink-dim); color: #fff; font-weight: 600; }
+  .nav-item.active::before {
+    content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 3px;
+    background: var(--pink); border-radius: 2px;
+  }
+  .nav-icon { width: 16px; text-align: center; font-size: 13px; opacity: 0.85; flex-shrink: 0; }
+  .nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--faint); transition: background 0.15s;
+  }
+  .status-dot.ok { background: var(--ok-fg); }
+  .status-dot.warn { background: var(--warn-fg); }
+
+  .sidebar-footer {
+    padding: 12px 18px 16px; border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 11px; color: rgba(255,255,255,0.35); line-height: 1.5;
+  }
+  .sidebar-footer code {
+    background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; font-size: 10.5px;
+  }
+
+  /* ---------- Main / doc ---------- */
+  main { min-width: 0; overflow-y: auto; overflow-x: hidden; background: var(--bg); }
+  .topbar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 32px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+  }
+  .topbar .path { font-size: 12.5px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .topbar .spacer { flex: 1; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .badge.ok { color: var(--ok-fg); background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-fg) 30%, transparent); }
+  .badge.warn { color: var(--warn-fg); background: var(--warn-bg); border-color: var(--warn-border); }
+
+  .doc-wrap { padding: 8px 32px 96px; }
+  .doc {
+    max-width: 760px; margin: 0 auto; background: var(--panel);
+    border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 44px 52px 56px; overflow-wrap: break-word;
+  }
+  @media (max-width: 640px) { .doc { padding: 28px 20px 40px; } .doc-wrap { padding: 8px 12px 64px; } .topbar { padding: 10px 16px; } }
+
+  .doc h1 {
+    font-size: 27px; margin: 0 0 6px; letter-spacing: -0.01em;
+    padding-bottom: 14px; border-bottom: 2px solid var(--pink);
+  }
+  .doc h2 {
+    font-size: 19px; margin: 40px 0 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border); scroll-margin-top: 70px;
+  }
+  .doc h3 { font-size: 15.5px; margin: 26px 0 8px; scroll-margin-top: 70px; }
+  .doc h2 .anchor, .doc h3 .anchor {
+    opacity: 0; text-decoration: none; color: var(--faint); margin-left: 6px; font-weight: 400;
+    transition: opacity 0.12s;
+  }
+  .doc h2:hover .anchor, .doc h3:hover .anchor { opacity: 1; }
+  .doc p, .doc li { line-height: 1.7; font-size: 14.5px; color: var(--text); }
+  .doc li { margin: 4px 0; }
+  .doc strong { font-weight: 650; }
+  .doc code {
+    background: var(--code-bg); padding: 2px 6px; border-radius: 5px;
+    font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .doc pre {
+    background: var(--code-bg); padding: 15px 18px; border-radius: 8px; overflow-x: auto;
+    border: 1px solid var(--border); max-width: 100%;
+  }
+  .doc pre code { background: none; padding: 0; }
+  .table-scroll { overflow-x: auto; margin: 18px 0; max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+  .doc table { border-collapse: collapse; width: 100%; margin: 0; font-size: 13px; table-layout: fixed; }
+  .doc th, .doc td {
+    border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+    padding: 8px 12px; text-align: left; word-wrap: break-word; overflow-wrap: break-word;
+  }
+  .doc th:last-child, .doc td:last-child { border-right: none; }
+  .doc tr:last-child td { border-bottom: none; }
+  .doc th { background: var(--code-bg); font-weight: 650; }
+  .doc td code, .doc th code { word-break: break-all; white-space: normal; }
+  .doc blockquote {
+    border-left: 3px solid var(--pink); margin: 18px 0; padding: 6px 18px;
+    color: var(--muted); background: var(--code-bg); border-radius: 0 6px 6px 0;
+  }
+  .doc blockquote p { margin: 6px 0; }
+  .doc a { color: var(--pink); text-decoration: none; border-bottom: 1px solid transparent; }
+  .doc a:hover { border-bottom-color: var(--pink); }
+  .doc hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  .doc img { max-width: 100%; border-radius: 6px; }
+
+  .placeholder-warning {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-fg);
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 26px; font-size: 13px; line-height: 1.55;
+  }
+  .placeholder-warning .icon { font-size: 15px; flex-shrink: 0; }
+
+  .skeleton { padding: 44px 52px; max-width: 760px; margin: 0 auto; }
+  .skel-line {
+    height: 14px; border-radius: 6px; margin-bottom: 12px;
+    background: linear-gradient(90deg, var(--code-bg) 25%, var(--border) 37%, var(--code-bg) 63%);
+    background-size: 400% 100%; animation: shimmer 1.3s ease infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .error-box {
+    max-width: 760px; margin: 24px auto; padding: 20px 24px; border-radius: var(--radius);
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-fg); font-size: 14px;
+  }
+
+  /* ---------- Right mini-TOC ---------- */
+  .toc { padding: 24px 20px; overflow-y: auto; border-left: 1px solid var(--border); }
+  .toc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint); margin-bottom: 10px; }
+  .toc-link {
+    display: block; font-size: 12.5px; padding: 5px 0 5px 10px; color: var(--muted); text-decoration: none;
+    border-left: 2px solid var(--border); line-height: 1.4;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .toc-link.h3 { padding-left: 20px; font-size: 12px; }
+  .toc-link:hover { color: var(--text); }
+  .toc-link.current { color: var(--pink); border-left-color: var(--pink); font-weight: 600; }
+
+  /* ---------- File tree (browse repo files) ---------- */
+  .tree-node { user-select: none; }
+  .tree-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 10px; margin: 1px 0; border-radius: 8px;
+    color: rgba(255,255,255,0.65); text-decoration: none; font-size: 13px;
+    cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+  }
+  .tree-row:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .tree-row.active { background: var(--pink-dim); color: #fff; font-weight: 600; }
+  .tree-chevron { width: 12px; flex-shrink: 0; font-size: 10px; opacity: 0.6; transition: transform 0.12s; }
+  .tree-chevron.open { transform: rotate(90deg); }
+  .tree-icon { width: 15px; text-align: center; flex-shrink: 0; font-size: 12px; opacity: 0.8; }
+  .tree-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-children { margin-left: 16px; display: none; }
+  .tree-children.open { display: block; }
+  .tree-loading { font-size: 12px; color: rgba(255,255,255,0.35); padding: 6px 10px 6px 26px; }
+
+  .file-embed { width: 100%; height: 82vh; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+  .file-fallback {
+    max-width: 760px; margin: 24px auto; padding: 40px; text-align: center;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .file-fallback .icon { font-size: 32px; margin-bottom: 12px; }
+  .file-fallback a {
+    display: inline-block; margin-top: 14px; padding: 8px 16px; border-radius: 8px;
+    background: var(--pink); color: #fff; text-decoration: none; font-size: 13.5px; font-weight: 600;
+  }
+  .file-image-wrap { max-width: 900px; margin: 24px auto; text-align: center; }
+  .file-image-wrap img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+
+  /* ---------- Mermaid diagrams: click to expand ---------- */
+  pre.mermaid { position: relative; cursor: zoom-in; transition: outline-color 0.12s; outline: 2px solid transparent; outline-offset: 4px; border-radius: 8px; }
+  pre.mermaid:hover { outline-color: var(--pink); }
+  pre.mermaid::after {
+    content: "⤢ Click to expand"; position: absolute; top: 6px; right: 6px;
+    font-size: 10.5px; font-weight: 600; color: #fff; background: rgba(5, 22, 37, 0.72);
+    padding: 3px 8px; border-radius: 999px; opacity: 0; transition: opacity 0.12s; pointer-events: none;
+  }
+  pre.mermaid:hover::after { opacity: 1; }
+
+  .diagram-modal {
+    position: fixed; inset: 0; z-index: 100; background: rgba(5, 22, 37, 0.82);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  }
+  .diagram-modal.open { opacity: 1; pointer-events: auto; }
+  .diagram-modal-canvas {
+    width: 92vw; height: 88vh; background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; position: relative;
+    cursor: grab;
+  }
+  .diagram-modal-canvas.grabbing { cursor: grabbing; }
+  .diagram-modal-canvas svg { position: absolute; top: 50%; left: 50%; transform-origin: center center; }
+  .diagram-modal-toolbar {
+    position: absolute; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 2;
+  }
+  .diagram-modal-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--code-bg); color: var(--text); font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .diagram-modal-btn:hover { background: var(--pink-dim); }
+  .diagram-modal-hint {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    font-size: 11.5px; color: var(--muted); background: var(--code-bg);
+    padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border);
+  }
+
+  /* ---------- Dashboard ---------- */
+  .badge.danger { color: var(--pink); background: var(--pink-dim); border-color: color-mix(in srgb, var(--pink) 30%, transparent); }
+  .dash-health-card {
+    display: flex; align-items: flex-start; gap: 14px; margin: 18px 0 28px;
+    padding: 16px 18px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--border);
+  }
+  .dash-health-card .badge { flex-shrink: 0; margin-top: 1px; }
+  .dash-health-text { font-size: 13.5px; line-height: 1.6; color: var(--text); }
+  .dash-fact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 20px; margin-bottom: 8px; }
+  .dash-fact-row { font-size: 13px; }
+  .dash-fact-label { display: block; color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .dash-fact-value { color: var(--text); }
+  .dash-doc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dash-doc-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; text-decoration: none; color: var(--pink);
+    background: var(--pink-dim); border: 1px solid transparent; transition: border-color 0.12s;
+  }
+  .dash-doc-chip:hover { border-color: var(--pink); }
+  .dash-doc-chip-stage { font-weight: 400; color: inherit; opacity: 0.75; }
+  .dash-doc-chip-missing {
+    color: var(--faint); background: var(--code-bg); border: 1px dashed var(--border); cursor: help;
+  }
+  .dash-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 28px; }
+  .doc .dash-item {
+    display: grid; grid-template-columns: 44px 26px minmax(0, 1fr) minmax(0, max-content); align-items: start; gap: 10px;
+    padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel);
+    text-decoration: none; color: var(--text); font-size: 13px; transition: border-color 0.12s;
+  }
+  .doc .dash-item:hover { border-color: var(--pink); }
+  .doc .dash-item .dash-item-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--faint); }
+  .doc .dash-item .dash-item-text { line-height: 1.5; color: var(--text); min-width: 0; overflow-wrap: anywhere; }
+  .doc .dash-item .dash-item-text code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+  /* Status cells can carry a long free-text note (e.g. a milestone's "Pending — subtask ... overdue
+     since ..."): cap the column's width, wrap, and clamp to 3 lines so it never spills past the card.
+     The full text is on hover (title) and in the item's detail view. */
+  .doc .dash-item .dash-item-status {
+    font-size: 12px; color: var(--muted); max-width: 260px; text-align: right; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+  }
+  .doc .dash-item .dash-item-text > a { color: var(--text); text-decoration: none; }
+  .doc .dash-item .dash-item-text > a:hover { color: var(--pink); }
+  .doc .dash-item .dash-item-meta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .doc .dash-item .dash-item-meta a { color: var(--muted); }
+  .doc .dash-item .dash-item-meta a:hover { color: var(--pink); }
+  .doc .dash-closed-risk {
+    padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel);
+    font-size: 13px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .doc .dash-closed-risk-head { display: grid; grid-template-columns: 64px 22px minmax(0, 1fr); gap: 8px; align-items: start; }
+  .doc .dash-closed-risk-head .dash-item-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--faint); text-decoration: none; }
+  .doc .dash-closed-risk-head .dash-item-id:hover { color: var(--pink); }
+  .doc .dash-closed-risk-head .dash-item-text { line-height: 1.5; min-width: 0; overflow-wrap: anywhere; }
+  .doc .dash-closed-risk-status { font-size: 12px; color: var(--muted); padding-left: 94px; }
+  .doc .dash-closed-risk-resolution {
+    line-height: 1.55; padding: 8px 10px; margin-left: 94px; border-left: 3px solid var(--ok-fg);
+    background: var(--ok-bg); border-radius: 0 6px 6px 0; overflow-wrap: anywhere;
+  }
+  .doc .dash-closed-risk-resolution code, .doc .dash-closed-risk-head code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+  .doc .dash-closed-risk .dash-doc-chips { padding-left: 94px; }
+  @media (max-width: 640px) {
+    .doc .dash-closed-risk-status, .doc .dash-closed-risk .dash-doc-chips { padding-left: 0; }
+    .doc .dash-closed-risk-resolution { margin-left: 0; }
+  }
+  .dash-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 13.5px; background: var(--code-bg); border-radius: 8px; border: 1px dashed var(--border); }
+  .dash-footnote { font-size: 12.5px; color: var(--faint); margin-top: 20px; }
+
+  /* ---------- Dashboard tabs ---------- */
+  .dash-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 18px 0 8px; border-bottom: 1px solid var(--border); }
+  .doc .dash-tab {
+    padding: 8px 14px; font-size: 13.5px; font-weight: 600; color: var(--muted);
+    text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .doc .dash-tab:hover { color: var(--text); border-bottom-color: var(--border); }
+  .doc .dash-tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+
+  .dash-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0 28px; }
+  .doc .dash-stat {
+    display: block; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel); text-decoration: none; transition: border-color 0.12s;
+  }
+  .doc .dash-stat:hover { border-color: var(--pink); }
+  .dash-stat-value { font-size: 23px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .dash-stat-value.alert { color: var(--pink); }
+  .dash-stat-label { font-size: 11.5px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+
+  .placeholder-warning.approved { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-fg) 30%, transparent); color: var(--ok-fg); }
+
+  .nav-count-badge {
+    min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
+    background: var(--warn-fg); color: var(--black); font-size: 10px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .dash-attention {
+    margin: 18px 0 30px; border-radius: 10px; border: 1px solid var(--warn-border);
+    background: var(--warn-bg); overflow: hidden;
+  }
+  .dash-attention-head {
+    display: flex; align-items: center; gap: 8px; padding: 14px 18px 4px;
+    color: var(--warn-fg); font-weight: 650; font-size: 14px;
+  }
+  .dash-attention-sub { padding: 0 18px 12px; color: var(--warn-fg); font-size: 12.5px; opacity: 0.85; }
+  .doc .dash-attention-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    border-top: 1px solid color-mix(in srgb, var(--warn-border) 60%, transparent);
+    text-decoration: none; color: var(--text); font-size: 13px;
+  }
+  .doc .dash-attention-item:hover { background: color-mix(in srgb, var(--warn-bg) 60%, var(--panel)); }
+  .dash-attention-item-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dash-attention-item-cta { font-size: 12px; color: var(--warn-fg); font-weight: 600; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="brand-text">vtex-client<span>-template</span></span>
+    </div>
+    <nav class="nav-scroll" id="nav">
+      <div id="corenav"></div>
+      <div class="nav-group-label">Repo Files</div>
+      <div id="filetree"></div>
+    </nav>
+    <div class="sidebar-footer">Served locally · edits to a file need a reload<br/><code>python3 -m http.server</code></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <span class="path" id="topbar-path">README.md</span>
+      <span class="spacer"></span>
+      <span class="badge" id="topbar-badge" style="display:none"></span>
+    </div>
+    <div class="doc-wrap">
+      <div id="doc-container">
+        <div class="skeleton">
+          <div class="skel-line" style="width:40%;height:26px;margin-bottom:20px"></div>
+          <div class="skel-line" style="width:92%"></div>
+          <div class="skel-line" style="width:85%"></div>
+          <div class="skel-line" style="width:70%"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="toc" id="toc"></aside>
+</div>
+
+<div class="diagram-modal" id="diagram-modal">
+  <div class="diagram-modal-canvas" id="diagram-modal-canvas">
+    <div class="diagram-modal-toolbar">
+      <button class="diagram-modal-btn" id="diagram-zoom-out" title="Zoom out">−</button>
+      <button class="diagram-modal-btn" id="diagram-zoom-reset" title="Reset">⟲</button>
+      <button class="diagram-modal-btn" id="diagram-zoom-in" title="Zoom in">+</button>
+      <button class="diagram-modal-btn" id="diagram-close" title="Close (Esc)">✕</button>
+    </div>
+    <div class="diagram-modal-hint">Scroll to zoom · drag to pan · Esc to close</div>
+  </div>
+</div>
+
+<script>
+const FILES = [
+  { name: "README.md",    label: "README",    icon: "◆", group: "Start here" },
+  { name: "CLAUDE.md",    label: "Claude.md", icon: "✦", group: "Start here" },
+  { name: "STRUCTURE.md", label: "Structure", icon: "▤", group: "Core files" },
+  { name: "PROJECT.md",   label: "Project",   icon: "▣", group: "Core files" },
+  { name: "CHECKLIST.md", label: "Checklist", icon: "☑", group: "Core files" },
+  { name: "JOURNAL.md",   label: "Journal",   icon: "▧", group: "Core files" },
+];
+
+// A file has a genuinely unfilled template field only if a bare {{TOKEN}} sits in the
+// actual content -- not when the file is *talking about* the placeholder syntax inside
+// inline code (e.g. CLAUDE.md/STRUCTURE.md/README.md instructional text, or a JOURNAL.md
+// entry narrating past template state). Strip inline-code spans first so those mentions
+// don't trip a false "still has placeholders" warning.
+function hasUnfilledPlaceholders(text) {
+  return /\{\{[A-Z_]+\}\}/.test(text.replace(/`[^`\n]*`/g, ''));
+}
+
+// VTEX-branded diagram theme: neutral node fills/borders and muted edges keep the
+// diagram quiet, with brand pink reserved for subgraph grouping only (an accent,
+// not the default color of every line -- a diagram in all-pink reads as noisy).
+const PREFERS_DARK = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const MERMAID_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  themeVariables: PREFERS_DARK ? {
+    darkMode: true,
+    background: '#0a121c',
+    fontFamily: MERMAID_FONT,
+    fontSize: '13px',
+    primaryColor: '#101a26',
+    primaryTextColor: '#e7ecf1',
+    primaryBorderColor: '#2a3a4d',
+    secondaryColor: '#16212f',
+    secondaryBorderColor: '#2a3a4d',
+    tertiaryColor: '#16212f',
+    tertiaryBorderColor: '#2a3a4d',
+    lineColor: '#5c6b7a',
+    textColor: '#e7ecf1',
+    clusterBkg: '#0d1622',
+    clusterBorder: '#f71963',
+    edgeLabelBackground: '#101a26',
+  } : {
+    darkMode: false,
+    background: '#f4f5f7',
+    fontFamily: MERMAID_FONT,
+    fontSize: '13px',
+    primaryColor: '#ffffff',
+    primaryTextColor: '#14181d',
+    primaryBorderColor: '#d7dbe0',
+    secondaryColor: '#f1f2f4',
+    secondaryBorderColor: '#d7dbe0',
+    tertiaryColor: '#f1f2f4',
+    tertiaryBorderColor: '#d7dbe0',
+    lineColor: '#9aa3ad',
+    textColor: '#14181d',
+    clusterBkg: '#fbfbfc',
+    clusterBorder: '#f71963',
+    edgeLabelBackground: '#ffffff',
+  },
+  flowchart: {
+    curve: 'linear',
+    nodeSpacing: 45,
+    rankSpacing: 65,
+    htmlLabels: true,
+  },
+  securityLevel: 'strict',
+});
+
+const navEl = document.getElementById('corenav');
+const treeEl = document.getElementById('filetree');
+const docContainer = document.getElementById('doc-container');
+const tocEl = document.getElementById('toc');
+const topbarPath = document.getElementById('topbar-path');
+const topbarBadge = document.getElementById('topbar-badge');
+
+const fileStatus = {}; // name -> 'ok' | 'warn' | null (unknown)
+const CORE_NAMES = new Set(FILES.map(f => f.name));
+
+function slugify(text) {
+  return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+}
+
+function extOf(path) {
+  const m = /\.([a-z0-9]+)$/i.exec(path);
+  return m ? m[1].toLowerCase() : '';
+}
+
+function buildNav() {
+  navEl.innerHTML = '';
+  let lastGroup = null;
+  FILES.forEach(f => {
+    if (f.group !== lastGroup) {
+      const label = document.createElement('div');
+      label.className = 'nav-group-label';
+      label.textContent = f.group;
+      navEl.appendChild(label);
+      lastGroup = f.group;
+    }
+    const a = document.createElement('a');
+    a.href = '#' + f.name;
+    a.className = 'nav-item';
+    a.dataset.path = f.name;
+    a.innerHTML =
+      '<span class="nav-icon">' + f.icon + '</span>' +
+      '<span class="nav-label">' + f.label + '</span>' +
+      '<span class="status-dot" data-status-for="' + f.name + '"></span>';
+    navEl.appendChild(a);
+  });
+}
+buildNav();
+
+// ---------- "Analysis" nav group: Dashboard (always) + Architecture (if it exists) ----------
+function ensureAnalysisGroup() {
+  let label = navEl.querySelector('.nav-group-label[data-group="analysis"]');
+  if (!label) {
+    label = document.createElement('div');
+    label.className = 'nav-group-label';
+    label.dataset.group = 'analysis';
+    label.textContent = 'Analysis';
+    navEl.insertBefore(label, navEl.firstChild);
+  }
+  return label;
+}
+
+function addNavItemAfter(afterEl, { icon, label, path, hash }) {
+  const a = document.createElement('a');
+  a.href = hash;
+  a.className = 'nav-item';
+  a.dataset.path = path;
+  a.innerHTML = '<span class="nav-icon">' + icon + '</span><span class="nav-label">' + label + '</span>';
+  afterEl.insertAdjacentElement('afterend', a);
+  return a;
+}
+
+const dashboardNavItem = addNavItemAfter(ensureAnalysisGroup(), {
+  icon: '📊', label: 'Dashboard', path: '__dashboard__', hash: '#dashboard',
+});
+
+// If a generated architecture snapshot exists (CLAUDE.md Hard Rule 10 -- static,
+// regenerated only on request), pin it (and the Approvals queue next to it) as their
+// own nav entries. Skipped entirely when absent, so a fresh/template repo shows
+// nothing broken.
+const ARCH_SNAPSHOT_PATH = 'Internal Documents/Architecture/architecture-snapshot.md';
+fetch('../' + ARCH_SNAPSHOT_PATH.split('/').map(encodeURIComponent).join('/'), { cache: 'no-store' })
+  .then(r => { if (r.ok) addArchitectureNavEntry(); })
+  .catch(() => {});
+
+function addArchitectureNavEntry() {
+  const approvalsItem = addNavItemAfter(dashboardNavItem, {
+    icon: '📋', label: 'Approvals', path: '__approvals__', hash: '#approvals',
+  });
+  addNavItemAfter(approvalsItem, {
+    icon: '🗺', label: 'Architecture', path: ARCH_SNAPSHOT_PATH,
+    hash: '#path=' + encodeURIComponent(ARCH_SNAPSHOT_PATH),
+  });
+  Promise.all([scanDocStages(), scanAtlasDocs()]).then(([types, docs]) => {
+    const c = approvalCounts(types, docs);
+    if (!c.total) return;
+    const badge = document.createElement('span');
+    badge.className = 'nav-count-badge';
+    badge.title = c.total + ' document' + (c.total === 1 ? '' : 's') + ' waiting on SA action: ' +
+      approvalBreakdownText(c);
+    badge.textContent = c.total;
+    approvalsItem.appendChild(badge);
+  }).catch(() => {});
+}
+
+// Single source for the Approvals badge and the Approvals page summary, so the number in the nav
+// always matches what the page lists (2026-09-28: the badge used to count drafts + Topic Analysis
+// + Atlas suggestions while the page only surfaced the drafts up top).
+function approvalCounts(types, docs) {
+  const drafts = types.reduce((sum, t) =>
+    sum + (t.stages['Drafts'] || []).length + (t.stages['Reviewed'] || []).length, 0);
+  const topicDocs = docs.filter(d => d.reviewed && !d.reviewed.reviewed && !d.closed);
+  const atlasDocs = docs.filter(d => d.candidate.suggested && !d.approved.approved);
+  return { drafts, topicDocs, atlasDocs, total: drafts + topicDocs.length + atlasDocs.length };
+}
+
+function approvalBreakdownText(c) {
+  const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+  return [
+    plural(c.drafts, 'ADR/BN draft', 'ADR/BN drafts'),
+    plural(c.topicDocs.length, 'Topic Analysis to review', 'Topic Analysis docs to review'),
+    plural(c.atlasDocs.length, 'Atlas suggestion to confirm', 'Atlas suggestions to confirm'),
+  ].join(' · ');
+}
+
+function setStatusDot(name, status) {
+  fileStatus[name] = status;
+  const dot = navEl.querySelector('.status-dot[data-status-for="' + name + '"]');
+  if (dot) dot.className = 'status-dot' + (status ? ' ' + status : '');
+}
+
+// ---------- Repo file browser (Sales Phase/, Contract/, meetings/, etc.) ----------
+// Parses the directory-index HTML that `python3 -m http.server` serves for any
+// folder request. Fragile-but-fine: this preview is only ever launched against
+// that exact server (see .claude/launch.json).
+async function fetchDirListing(path) {
+  const res = await fetch('../' + path, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const entries = [...doc.querySelectorAll('ul li a')].map(a => {
+    const href = decodeURIComponent(a.getAttribute('href') || '');
+    const isDir = href.endsWith('/');
+    return { name: isDir ? href.slice(0, -1) : href, isDir };
+  });
+  entries.sort((a, b) => (a.isDir === b.isDir) ? a.name.localeCompare(b.name) : (a.isDir ? -1 : 1));
+  return entries;
+}
+
+function iconFor(entry) {
+  if (entry.isDir) return '📁';
+  const ext = extOf(entry.name);
+  if (ext === 'md') return '📝';
+  if (ext === 'pdf') return '📕';
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext)) return '🖼';
+  if (['doc', 'docx'].includes(ext)) return '📄';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+  if (['ppt', 'pptx'].includes(ext)) return '📽';
+  return '📄';
+}
+
+// The repo root has a real index.html (redirects a bare `localhost:PORT` straight
+// into this preview) -- which means python's directory-listing HTML never shows
+// for the root path specifically (it always serves index.html instead once one
+// exists in a directory). So the root level can't be discovered by parsing a
+// listing like every other folder; it's hardcoded from STRUCTURE.md's canonical
+// top-level folders instead, each checked for existence (a given repo may not
+// have populated every one yet).
+const ROOT_FOLDERS = [
+  'meetings', 'Sales Phase', 'Contract', 'Customer Needs',
+  'Documents Shared by Customer', 'Functional Specifications',
+  'Internal Documents', 'Recordings', 'Shared',
+];
+
+async function renderRootLevel(container) {
+  container.innerHTML = '<div class="tree-loading">Loading…</div>';
+  const checks = await Promise.all(ROOT_FOLDERS.map(async name => {
+    try {
+      const entries = await fetchDirListing(name + '/');
+      return { name, isDir: true, entries };
+    } catch (e) {
+      return null; // folder doesn't exist in this repo (yet) -- skip it
+    }
+  }));
+  container.innerHTML = '';
+  checks.filter(Boolean).forEach(({ name }) => buildTreeRow(container, '', { name, isDir: true }));
+  if (!checks.some(Boolean)) {
+    container.innerHTML = '<div class="tree-loading">No other folders yet</div>';
+  }
+}
+
+async function renderTreeLevel(container, basePath) {
+  container.innerHTML = '<div class="tree-loading">Loading…</div>';
+  let entries;
+  try {
+    entries = await fetchDirListing(basePath);
+  } catch (e) {
+    container.innerHTML = '<div class="tree-loading">Could not list this folder</div>';
+    return;
+  }
+  container.innerHTML = '';
+  entries.forEach(entry => buildTreeRow(container, basePath, entry));
+}
+
+function buildTreeRow(container, basePath, entry) {
+  const fullPath = basePath + entry.name + (entry.isDir ? '/' : '');
+  const node = document.createElement('div');
+  node.className = 'tree-node';
+
+  const row = document.createElement('div');
+  row.className = 'tree-row';
+  row.dataset.path = fullPath;
+  row.innerHTML =
+    '<span class="tree-chevron">' + (entry.isDir ? '▸' : '') + '</span>' +
+    '<span class="tree-icon">' + iconFor(entry) + '</span>' +
+    '<span class="tree-label">' + entry.name + '</span>';
+  node.appendChild(row);
+
+  if (entry.isDir) {
+    const childWrap = document.createElement('div');
+    childWrap.className = 'tree-children';
+    node.appendChild(childWrap);
+
+    let loaded = false;
+    row.addEventListener('click', async () => {
+      const chevron = row.querySelector('.tree-chevron');
+      const nowOpen = !childWrap.classList.contains('open');
+      childWrap.classList.toggle('open', nowOpen);
+      chevron.classList.toggle('open', nowOpen);
+      if (nowOpen && !loaded) {
+        loaded = true;
+        await renderTreeLevel(childWrap, fullPath);
+      }
+    });
+  } else {
+    row.addEventListener('click', () => {
+      location.hash = '#path=' + encodeURIComponent(fullPath);
+    });
+  }
+
+  container.appendChild(node);
+}
+
+renderRootLevel(treeEl);
+
+// Prefetch every file once, purely to populate sidebar status dots.
+FILES.forEach(f => {
+  fetch('../' + f.name, { cache: 'no-store' })
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(text => setStatusDot(f.name, hasUnfilledPlaceholders(text) ? 'warn' : 'ok'))
+    .catch(() => {});
+});
+
+function buildToc(docEl) {
+  const headings = [...docEl.querySelectorAll('h2, h3')];
+  tocEl.innerHTML = '';
+  if (headings.length < 2) return;
+  const title = document.createElement('div');
+  title.className = 'toc-title';
+  title.textContent = 'On this page';
+  tocEl.appendChild(title);
+  headings.forEach(h => {
+    const link = document.createElement('a');
+    link.className = 'toc-link ' + h.tagName.toLowerCase();
+    link.href = '#' + h.id;
+    link.textContent = h.textContent.replace(/#$/, '').trim();
+    link.dataset.target = h.id;
+    tocEl.appendChild(link);
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      tocEl.querySelectorAll('.toc-link').forEach(l =>
+        l.classList.toggle('current', l.dataset.target === entry.target.id));
+    });
+  }, { rootMargin: '-64px 0px -70% 0px' });
+  headings.forEach(h => io.observe(h));
+}
+
+async function loadFile(name) {
+  docContainer.innerHTML =
+    '<div class="skeleton">' +
+      '<div class="skel-line" style="width:40%;height:26px;margin-bottom:20px"></div>' +
+      '<div class="skel-line" style="width:92%"></div>' +
+      '<div class="skel-line" style="width:85%"></div>' +
+      '<div class="skel-line" style="width:70%"></div>' +
+    '</div>';
+  tocEl.innerHTML = '';
+  topbarPath.textContent = name;
+  topbarBadge.style.display = 'none';
+
+  try {
+    const res = await fetch('../' + name, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const hasPlaceholders = hasUnfilledPlaceholders(text);
+    setStatusDot(name, hasPlaceholders ? 'warn' : 'ok');
+
+    let html = marked.parse(text);
+    const wrap = document.createElement('div');
+    wrap.className = 'doc';
+    wrap.innerHTML = html;
+
+    // Mermaid code fences: marked renders ```mermaid as <pre><code
+    // class="language-mermaid">, but mermaid.run() expects <pre class="mermaid">
+    // holding the raw diagram source (not HTML-escaped-then-reparsed).
+    wrap.querySelectorAll('code.language-mermaid').forEach(code => {
+      const pre = document.createElement('pre');
+      pre.className = 'mermaid';
+      pre.textContent = code.textContent;
+      code.parentElement.replaceWith(pre);
+    });
+
+    // Anchor ids + hover-linkable heading anchors
+    wrap.querySelectorAll('h2, h3').forEach(h => {
+      const id = slugify(h.textContent);
+      h.id = id;
+      const anchor = document.createElement('a');
+      anchor.className = 'anchor';
+      anchor.href = '#' + id;
+      anchor.textContent = '#';
+      h.appendChild(anchor);
+    });
+
+    // Wrap tables for horizontal scroll on narrow viewports
+    wrap.querySelectorAll('table').forEach(table => {
+      const scroller = document.createElement('div');
+      scroller.className = 'table-scroll';
+      table.parentNode.insertBefore(scroller, table);
+      scroller.appendChild(table);
+    });
+
+    const stage = docStageFromPath(name);
+    const reviewed = reviewedBySAStatus(text);
+    const candidate = atlasCandidateStatus(text);
+    const approved = atlasApprovedStatus(text);
+
+    if (hasPlaceholders) {
+      const banner = document.createElement('div');
+      banner.className = 'placeholder-warning';
+      banner.innerHTML = '<span class="icon">⚠️</span><span>This file still contains unfilled <code>{{PLACEHOLDER}}</code> values — initialize mode has not been run yet.</span>';
+      wrap.insertBefore(banner, wrap.firstChild);
+      topbarBadge.className = 'badge warn';
+      topbarBadge.textContent = '⚠ Has placeholders';
+      topbarBadge.style.display = 'inline-flex';
+    } else if (stage) {
+      const banner = document.createElement('div');
+      banner.className = 'placeholder-warning';
+      // A Drafts/ ADR/BN can already be SA-reviewed (reviewed_by/reviewed_date, Hard Rule 12)
+      // while it waits for approval, so the folder alone isn't the whole story.
+      const fmReview = frontmatterReview(text);
+      const draftReviewed = stage === 'Drafts' && fmReview;
+      banner.innerHTML = draftReviewed
+        ? '<span class="icon">👀</span><span><strong>Reviewed by ' + escapeHtml(fmReview.by) + (fmReview.date ? ', ' + escapeHtml(fmReview.date) : '') + '</strong> — waiting for approval, not yet accepted as the team\'s final position.</span>'
+        : stage === 'Drafts'
+        ? '<span class="icon">📝</span><span><strong>Draft</strong> — freshly captured, not yet reviewed by the SA.</span>'
+        : '<span class="icon">👀</span><span><strong>Reviewed</strong> — the SA has read this, not yet accepted as the team\'s final position.</span>';
+      wrap.insertBefore(banner, wrap.firstChild);
+      topbarBadge.className = 'badge warn';
+      topbarBadge.textContent = draftReviewed ? '👀 Reviewed — waiting approval' : stage === 'Drafts' ? '📝 Draft' : '👀 Reviewed';
+      topbarBadge.style.display = 'inline-flex';
+    } else if (reviewed || candidate || approved) {
+      const isReviewed = !!(reviewed && reviewed.reviewed);
+      const isApproved = !!(approved && approved.approved);
+      const candText = candidate
+        ? (candidate.suggested ? '🤖 Suggested by AI' : candidate.rejected ? '🚫 Not Atlas-worthy' : '— Not yet assessed')
+        : '— Not yet assessed';
+      const apprText = isApproved ? ('✅ ' + marked.parseInline(approved.label)) : '— Not yet';
+      const parts = [];
+      if (reviewed) {
+        parts.push('<strong>Reviewed by SA:</strong> ' + (isReviewed ? ('✅ ' + marked.parseInline(reviewed.label)) : '⏳ Pending SA review'));
+      }
+      parts.push('<strong>Atlas candidate:</strong> ' + candText);
+      parts.push('<strong>Atlas approved:</strong> ' + apprText);
+      const icon = isApproved ? '✅' : (reviewed && !isReviewed ? '⏳' : '🧭');
+      const banner = document.createElement('div');
+      banner.className = 'placeholder-warning' + (isApproved ? ' approved' : '');
+      banner.innerHTML = '<span class="icon">' + icon + '</span><span>' + parts.join(' &nbsp;·&nbsp; ') + '</span>';
+      wrap.insertBefore(banner, wrap.firstChild);
+      topbarBadge.className = 'badge ' + (isApproved ? 'ok' : 'warn');
+      topbarBadge.textContent = isApproved ? '✅ Approved for Atlas' :
+        (reviewed && !isReviewed ? '⏳ Pending review' :
+         (candidate && candidate.suggested ? '🤖 Atlas candidate' : '✓ Filled in'));
+      topbarBadge.style.display = 'inline-flex';
+    } else {
+      topbarBadge.className = 'badge ok';
+      topbarBadge.textContent = '✓ Filled in';
+      topbarBadge.style.display = 'inline-flex';
+    }
+
+    docContainer.innerHTML = '';
+    docContainer.appendChild(wrap);
+    buildToc(wrap);
+
+    const mermaidBlocks = wrap.querySelectorAll('.mermaid');
+    if (mermaidBlocks.length) {
+      try { await mermaid.run({ nodes: mermaidBlocks }); } catch (e) { /* leave raw source visible on failure */ }
+    }
+  } catch (e) {
+    docContainer.innerHTML = '<div class="error-box">Could not load <code>' + name + '</code> — ' + e.message + '</div>';
+  }
+
+  markActive(name);
+}
+
+function markActive(path) {
+  navEl.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.dataset.path === path));
+  treeEl.querySelectorAll('.tree-row').forEach(r => r.classList.toggle('active', r.dataset.path === path));
+}
+
+function showPdf(path) {
+  tocEl.innerHTML = '';
+  topbarPath.textContent = path;
+  topbarBadge.style.display = 'none';
+  docContainer.innerHTML = '<iframe class="file-embed" src="../' + path.split('/').map(encodeURIComponent).join('/') + '"></iframe>';
+  markActive(path);
+}
+
+function showImage(path) {
+  tocEl.innerHTML = '';
+  topbarPath.textContent = path;
+  topbarBadge.style.display = 'none';
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  docContainer.innerHTML = '<div class="file-image-wrap"><img src="../' + encoded + '" alt="' + path + '"></div>';
+  markActive(path);
+}
+
+function showFallback(path) {
+  tocEl.innerHTML = '';
+  topbarPath.textContent = path;
+  topbarBadge.style.display = 'none';
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  const name = path.split('/').pop();
+  docContainer.innerHTML =
+    '<div class="file-fallback">' +
+      '<div class="icon">' + iconFor({ name, isDir: false }) + '</div>' +
+      '<div>This file type can\'t be previewed inline here.</div>' +
+      '<a href="../' + encoded + '" target="_blank" rel="noopener">Open ' + name + '</a>' +
+    '</div>';
+  markActive(path);
+}
+
+function openPath(path) {
+  const ext = extOf(path);
+  if (ext === 'md') { loadFile(path); return; }
+  if (ext === 'pdf') { showPdf(path); return; }
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext)) { showImage(path); return; }
+  showFallback(path);
+}
+
+function route() {
+  const hash = location.hash || '#README.md';
+  if (hash === '#dashboard' || hash.startsWith('#dashboard:')) {
+    showDashboard(hash.startsWith('#dashboard:') ? hash.slice('#dashboard:'.length) : 'overview');
+    return;
+  }
+  if (hash === '#approvals') { showApprovals(); return; }
+  if (hash.startsWith('#risk=')) { showItemDetail('risk', decodeURIComponent(hash.slice('#risk='.length))); return; }
+  if (hash.startsWith('#milestone=')) { showItemDetail('milestone', decodeURIComponent(hash.slice('#milestone='.length))); return; }
+  if (hash.startsWith('#path=')) {
+    openPath(decodeURIComponent(hash.slice('#path='.length)));
+    return;
+  }
+  const name = hash.slice(1);
+  openPath(FILES.some(f => f.name === name) ? name : 'README.md');
+}
+
+// ---------- Dashboard: aggregates PROJECT.md + CHECKLIST.md, no data duplicated here ----------
+// Everything below reads the live files and parses them -- nothing shown here is hand-copied,
+// so this view can never drift from PROJECT.md/CHECKLIST.md the way scattered restatements can.
+
+function parseHeaderBlock(md) {
+  const lines = md.split('\n');
+  let i = 0;
+  while (i < lines.length && !lines[i].startsWith('>')) i++;
+  const blockLines = [];
+  while (i < lines.length && lines[i].startsWith('>')) {
+    blockLines.push(lines[i].replace(/^>\s?/, ''));
+    i++;
+  }
+  const joined = blockLines.join(' ');
+  const fields = {};
+  const parts = joined.split(/\*\*([^*:]+):\*\*/);
+  for (let j = 1; j < parts.length; j += 2) {
+    const label = parts[j].trim();
+    const value = (parts[j + 1] || '').replace(/\|\s*$/, '').trim();
+    fields[label] = value;
+  }
+  return fields;
+}
+
+function extractSection(md, startHeadingRe, endHeadingRe) {
+  const lines = md.split('\n');
+  let start = -1, end = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    if (start === -1 && startHeadingRe.test(lines[i])) { start = i + 1; continue; }
+    if (start !== -1 && endHeadingRe.test(lines[i])) { end = i; break; }
+  }
+  return start === -1 ? '' : lines.slice(start, end).join('\n');
+}
+
+function parseMarkdownTable(md) {
+  const lines = md.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
+  if (lines.length < 2) return [];
+  const splitRow = (line) => line.slice(1, -1).split('|').map(c => c.trim());
+  const headers = splitRow(lines[0]);
+  const rows = [];
+  for (let i = 2; i < lines.length; i++) {
+    const cells = splitRow(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cells[idx] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function findHeaderField(fields, re) {
+  const key = Object.keys(fields).find(k => re.test(k));
+  return key ? fields[key] : '';
+}
+
+function emojiIn(text) {
+  return (text.match(/🟢|🟡|🟠|🔴/) || [])[0] || '';
+}
+
+function badgeClassFor(emoji) {
+  if (emoji === '🟢') return 'ok';
+  if (emoji === '🔴') return 'danger';
+  if (emoji) return 'warn';
+  return 'ok';
+}
+
+function severityRank(text) {
+  if (/🔴/.test(text)) return 0;
+  if (/🟠/.test(text)) return 1;
+  if (/🟡/.test(text)) return 2;
+  if (/🟢/.test(text)) return 3;
+  return 4;
+}
+
+// ---------- Atlas candidate/approved fields (CLAUDE.md Hard Rule 12) ----------
+// Two independent fields, replacing the old single "Atlas KB status" field: `Atlas candidate`
+// (AI or SA may suggest/reject) and `Atlas approved` (SA-only, final). Matches either the
+// blockquote header style (`> **Field:** value`) or the metadata-table style (`| Field | value |`).
+function parseTaggedLine(text, label) {
+  const line = text.split('\n').find(l => l.includes('**' + label + '**') || l.includes('| ' + label + ' |'));
+  if (!line) return null;
+  const m = line.match(/(⏳|✅|🚫|🤖|—)\s*(.+?)\s*\|?\s*\*?\s*$/);
+  return { icon: m ? m[1] : '', label: (m ? m[2] : line).replace(/\*+$/, '').trim() };
+}
+
+function atlasCandidateStatus(text) {
+  const parsed = parseTaggedLine(text, 'Atlas candidate');
+  if (!parsed) return null;
+  return { rejected: parsed.icon === '🚫', suggested: parsed.icon === '🤖', label: parsed.label };
+}
+
+function atlasApprovedStatus(text) {
+  const parsed = parseTaggedLine(text, 'Atlas approved');
+  if (!parsed) return null;
+  return { approved: parsed.icon === '✅', label: parsed.label };
+}
+
+// Reads reviewed_by / reviewed_date from a Drafts/ ADR or Behavior Note. Accepts YAML
+// frontmatter (`reviewed_by: <name>`) or a Markdown field line (`**reviewed_by:** <name>`), since
+// not every template that drafts these docs uses frontmatter. Null unless reviewed_by holds a real
+// value (blank, `—`, or a "Pending SA review" placeholder all count as not reviewed).
+function frontmatterReview(text) {
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const field = key => {
+    const re = new RegExp('^[ \\t>*-]*' + key + '\\**:\\**[ \\t]*(.*)$', 'm');
+    const f = (fm && fm[1].match(re)) || text.match(re);
+    return f ? f[1].replace(/^[`"']+|[`"']+$/g, '').trim() : '';
+  };
+  const by = field('reviewed_by');
+  if (!by || /^[—–~-]*$|^null$|pending/i.test(by)) return null;
+  return { by, date: field('reviewed_date') };
+}
+
+// Topic Analysis docs (and, if this repo ever has one, architecture-snapshot.md) skip the
+// Drafts/Reviewed/Accepted stages (they're always written final), so they carry this explicit
+// field instead -- the review signal ADRs/BNs get for free from their folder location. Null for
+// any doc that doesn't carry the field at all (an Accepted ADR/BN, which relies on folder
+// location instead).
+// A Topic Analysis doc that has been closed carries a bold "**Closed <date>" or "**Resolved"
+// note right after its title (CLAUDE.md Hard Rule 13: it stays in place as the historical
+// record). A closed topic is not waiting on SA review, so the Approvals page leaves it out.
+// Without this, a closed topic whose Reviewed by SA field is still pending keeps showing up
+// in the pending list and the nav badge.
+function topicClosedNote(text) {
+  const head = text.split('\n').slice(0, 12).join('\n');
+  const m = head.match(/^\*\*(Closed|Resolved)\b[^\n]*/m);
+  return m ? m[0].replace(/\*\*/g, '').split(/ — | - |\(/)[0].trim() : null;
+}
+
+function reviewedBySAStatus(text) {
+  const parsed = parseTaggedLine(text, 'Reviewed by SA');
+  if (!parsed) return null;
+  return { reviewed: parsed.icon === '✅', label: parsed.label };
+}
+
+// Recursively lists every real (non-README) .md file under a folder.
+async function walkMdFiles(root) {
+  const paths = [];
+  async function walk(path) {
+    let entries;
+    try { entries = await fetchDirListing(path); } catch (e) { return; }
+    await Promise.all(entries.map(async entry => {
+      const full = path + entry.name + (entry.isDir ? '/' : '');
+      if (entry.isDir) await walk(full);
+      else if (isRealDoc(entry)) paths.push(full);
+    }));
+  }
+  await walk(root);
+  return paths;
+}
+
+// Every document eligible to carry the Atlas fields: Accepted ADRs/Behavior Notes and Topic
+// Analysis docs (see STRUCTURE.md "Document stages" -- Drafts/Reviewed docs never carry these).
+async function scanAtlasDocs() {
+  const roots = [
+    'Internal Documents/Architecture/ADRs/Accepted/',
+    'Internal Documents/Architecture/Behavior Notes/Accepted/',
+    'Internal Documents/Architecture/Topic Analysis/',
+  ];
+  const paths = (await Promise.all(roots.map(walkMdFiles))).flat();
+
+  const docs = await Promise.all(paths.map(async path => {
+    try {
+      const res = await fetch('../' + path.split('/').map(encodeURIComponent).join('/'), { cache: 'no-store' });
+      if (!res.ok) return null;
+      const text = await res.text();
+      const reviewed = reviewedBySAStatus(text);
+      const candidate = atlasCandidateStatus(text);
+      const approved = atlasApprovedStatus(text);
+      if (!reviewed && !candidate && !approved) return null;
+      const titleMatch = text.match(/^#{1,3}\s+(.+)$/m);
+      return {
+        path,
+        title: titleMatch ? titleMatch[1].replace(/#$/, '').trim() : path.split('/').pop(),
+        reviewed, // null for an Accepted ADR/BN -- it relies on folder location instead
+        closed: topicClosedNote(text), // e.g. "Closed 2026-01-15"; null unless the doc was closed
+        candidate: candidate || { rejected: false, suggested: false, label: 'Not yet assessed' },
+        approved: approved || { approved: false, label: 'Not yet' },
+      };
+    } catch (e) { return null; }
+  }));
+  return docs.filter(Boolean);
+}
+
+// A document's stage, derived from its own path -- 'Drafts'/'Reviewed' for an unpromoted ADR/BN,
+// null for anything else (Accepted docs, Topic Analysis -- nothing special to flag).
+function docStageFromPath(path) {
+  if (/\/(ADRs|Behavior Notes)\/Drafts\//.test(path)) return 'Drafts';
+  if (/\/(ADRs|Behavior Notes)\/Reviewed\//.test(path)) return 'Reviewed';
+  return null;
+}
+
+function dashFactRow(label, value) {
+  if (!value) return '';
+  return '<div class="dash-fact-row"><span class="dash-fact-label">' + label + '</span>' +
+    '<span class="dash-fact-value">' + marked.parseInline(value) + '</span></div>';
+}
+
+function dashItem(kind, idKey, textKey, statusKey, row, sevKey) {
+  const sev = sevKey ? row[sevKey] : '';
+  const id = row[idKey] || '';
+  return '<a class="dash-item" href="#' + kind + '=' + encodeURIComponent(id) + '">' +
+    '<span class="dash-item-id">' + id + '</span>' +
+    '<span>' + (sev ? emojiIn(sev) : '') + '</span>' +
+    '<span class="dash-item-text">' + marked.parseInline(row[textKey] || '') + '</span>' +
+    '<span class="dash-item-status" title="' + escapeHtml(row[statusKey] || '').replace(/"/g, '&quot;') + '">' +
+      marked.parseInline(row[statusKey] || '') + '</span>' +
+    '</a>';
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ---------- Documents by Stage (ADRs / Behavior Notes / Customer Needs) ----------
+// ADRs and Behavior Notes live in three real, physical stage subfolders (CLAUDE.md Hard Rule 12,
+// STRUCTURE.md "Document stages") -- counting is just a directory listing per stage, no metadata
+// parsing needed. Atlas candidacy is tracked by tag now, not a fourth "Candidate for Atlas" folder
+// (see scanAtlasDocs). Customer Needs don't follow this stage model either, so they're summarized
+// by their free-text Status column in CHECKLIST.md Section H instead.
+const DOC_STAGES = ['Drafts', 'Reviewed', 'Accepted'];
+// Display-only labels for the dashboard -- the physical folder names above (STRUCTURE.md
+// "Document stages", CLAUDE.md Hard Rule 12) stay as Drafts/Reviewed so vtex-meeting-decision-capture
+// (in the separate vtex-sa-toolkit repo) keeps filing new drafts into the right place; only the
+// friendlier wording shown here changes.
+const DOC_STAGE_LABELS = {
+  'Drafts': 'Needs review',
+  'Reviewed': 'Waiting for approval',
+  'Accepted': 'Accepted',
+};
+const DOC_STAGE_TYPES = [
+  { label: 'ADRs', root: 'Internal Documents/Architecture/ADRs/' },
+  { label: 'Behavior Notes', root: 'Internal Documents/Architecture/Behavior Notes/' },
+];
+
+function isRealDoc(entry) {
+  return !entry.isDir && extOf(entry.name) === 'md' && entry.name.toLowerCase() !== 'readme.md';
+}
+
+// ---------- Risk/task -> ADR/BN linking ----------
+// A risk or task's Notes routinely name the ADR or Behavior Note that explains how it's being
+// mitigated (e.g. "confirmed by `ADR-005`"), but on its own that's just inert code-span text in
+// the Dashboard -- no way to jump to the actual document. Ground this in CHECKLIST.md's own
+// "ADR / Behavior Note Register" table, if this project maintains one, rather than a raw directory
+// scan of the ADRs/Behavior Notes folders: a retired doc can still physically sit in a non-terminal
+// stage folder, so labeling by physical stage folder alone could wrongly call it "Needs review"
+// when the register already says "Retired". The register is the authoritative, human-curated
+// status; use it directly when present. (Optional: this project's CHECKLIST.md doesn't ship with a
+// register table by default -- add one under Section C, `# | Doc | Status | File | Notes`, if you
+// want this linking to resolve to real documents instead of "not found" chips.)
+function parseAdrBnRegister(checklistText) {
+  const section = extractSection(checklistText, /^###\s+ADR \/ Behavior Note Register/, /^##\s+D\./);
+  const rows = parseMarkdownTable(section);
+  const index = new Map();
+  rows.forEach(r => {
+    const id = (r['#'] || '').trim().toUpperCase();
+    if (!id) return;
+    const pathMatch = (r['File'] || '').match(/`([^`]+\.md)`/);
+    index.set(id, { status: (r['Status'] || '').trim(), path: pathMatch ? pathMatch[1] : null, doc: r['Doc'] || '' });
+  });
+  return index;
+}
+
+// Finds every `ADR-005` / `DRAFT-ADR-006` / `BN-004` / `DRAFT-BN-001` mention in a blob of text
+// (risk Notes, task descriptions, etc.) and returns the unique canonical ids in first-seen order.
+function extractDocRefs(text) {
+  const seen = new Set();
+  const out = [];
+  const re = /\b(?:DRAFT-)?(ADR|BN)-(\d{3})\b/gi;
+  let m;
+  while ((m = re.exec(text || '')) !== null) {
+    const id = (m[1] + '-' + m[2]).toUpperCase();
+    if (!seen.has(id)) { seen.add(id); out.push(id); }
+  }
+  return out;
+}
+
+// Renders the "Related documents" block for a risk detail view: a chip per ADR/BN id mentioned
+// anywhere in that row, linking to the real file when the register has one (via the existing
+// `#path=` route), labeled with the register's own status text (not a folder guess) -- and falling
+// back to a plain "not found" chip when the id isn't in the register at all (e.g. a typo, or an id
+// mentioned before it was formally filed, or this project doesn't maintain a register yet).
+function renderRelatedDocs(row, registry) {
+  const blob = Object.values(row).join(' ');
+  const ids = extractDocRefs(blob);
+  if (!ids.length) return '';
+  const chips = ids.map(id => {
+    const entry = registry.get(id);
+    if (entry && entry.path) {
+      const label = entry.status ? entry.status.split(' — ')[0].trim() : 'status unknown';
+      return '<a class="dash-doc-chip" href="#path=' + encodeURIComponent(entry.path) + '" title="' +
+        escapeHtml(entry.doc) + '">' + id + ' <span class="dash-doc-chip-stage">(' +
+        escapeHtml(label) + ')</span></a>';
+    }
+    return '<span class="dash-doc-chip dash-doc-chip-missing" title="Not found in CHECKLIST.md&#39;s ADR/BN register — check for a typo, or it may not be formally filed yet">' +
+      id + ' <span class="dash-doc-chip-stage">(not found)</span></span>';
+  }).join('');
+  return '<div class="dash-fact-row"><span class="dash-fact-label">Related documents</span>' +
+    '<span class="dash-fact-value"><div class="dash-doc-chips">' + chips + '</div></span></div>';
+}
+
+// Closed Risks tab: one card per Closed/Accepted row, leading with the "Resolution / How it's
+// handled" column rather than the (long, historical) Notes. The ADR/BN ids the resolution cites
+// become chips, same lookup as renderRelatedDocs. Cards are divs, not <a>, so the id link and the
+// doc chips don't nest anchors.
+function renderClosedRiskList(rows, registry) {
+  if (!rows.length) return '<div class="dash-empty">None yet.</div>';
+  return '<div class="dash-list">' + rows.map(r => {
+    const id = r['#'] || '';
+    const resolution = r["Resolution / How it's handled"] || '';
+    const hasResolution = resolution && resolution !== '—';
+    const chips = extractDocRefs(resolution).map(docId => {
+      const entry = registry.get(docId);
+      return entry && entry.path
+        ? '<a class="dash-doc-chip" href="#path=' + encodeURIComponent(entry.path) + '" title="' + escapeHtml(entry.doc) + '">' + docId + '</a>'
+        : '<span class="dash-doc-chip dash-doc-chip-missing">' + docId + '</span>';
+    }).join('');
+    return '<div class="dash-closed-risk">' +
+      '<div class="dash-closed-risk-head">' +
+        '<a class="dash-item-id" href="#risk=' + encodeURIComponent(id) + '">' + id + '</a>' +
+        '<span>' + emojiIn(r['Severity'] || '') + '</span>' +
+        '<span class="dash-item-text">' + marked.parseInline(r['Risk / Issue'] || '') + '</span>' +
+      '</div>' +
+      '<div class="dash-closed-risk-status">' + marked.parseInline(r['Status'] || '') + '</div>' +
+      '<div class="dash-closed-risk-resolution">' +
+        (hasResolution ? marked.parseInline(resolution)
+          : '<em>No resolution recorded yet — fill the row\'s "Resolution / How it\'s handled" column in CHECKLIST.md.</em>') +
+      '</div>' +
+      (chips ? '<div class="dash-doc-chips">' + chips + '</div>' : '') +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+async function scanDocStages() {
+  return Promise.all(DOC_STAGE_TYPES.map(async type => {
+    const stages = {};
+    await Promise.all(DOC_STAGES.map(async stage => {
+      try {
+        const entries = await fetchDirListing(type.root + stage + '/');
+        stages[stage] = entries.filter(isRealDoc).map(e => ({ name: e.name, path: type.root + stage + '/' + e.name }));
+      } catch (e) {
+        stages[stage] = []; // stage folder missing (fresh/template repo) -- treat as empty, not an error
+      }
+    }));
+    return { label: type.label, stages };
+  }));
+}
+
+function renderDocStageTable(types) {
+  let html = '<div class="table-scroll"><table><thead><tr><th>Type</th>' +
+    DOC_STAGES.map(s => '<th>' + DOC_STAGE_LABELS[s] + '</th>').join('') + '<th>Total</th></tr></thead><tbody>';
+  types.forEach(t => {
+    const counts = DOC_STAGES.map(s => t.stages[s].length);
+    const total = counts.reduce((a, b) => a + b, 0);
+    html += '<tr><td>' + t.label + '</td>' + counts.map(c => '<td>' + c + '</td>').join('') +
+      '<td><strong>' + total + '</strong></td></tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderDocsNeedingReview(types) {
+  const items = [];
+  types.forEach(t => {
+    ['Drafts', 'Reviewed'].forEach(stage => {
+      t.stages[stage].forEach(doc => items.push({ ...doc, type: t.label, stage }));
+    });
+  });
+  if (!items.length) return '<div class="dash-empty">Nothing waiting on SA review right now 🎉</div>';
+  return '<div class="dash-list">' + items.map(d =>
+    '<a class="dash-item" style="grid-template-columns: 140px minmax(0, 1fr) minmax(0, max-content)" href="#path=' + encodeURIComponent(d.path) + '">' +
+      '<span class="dash-item-id">' + DOC_STAGE_LABELS[d.stage] + '</span>' +
+      '<span class="dash-item-text">' + escapeHtml(d.name.replace(/\.md$/, '')) + '</span>' +
+      '<span class="dash-item-status">' + d.type + '</span>' +
+    '</a>'
+  ).join('') + '</div>';
+}
+
+function customerNeedsByStatus(checklistText) {
+  const rows = parseMarkdownTable(extractSection(checklistText, /^##\s+H\./, /^##\s+[A-Z]\./));
+  const open = rows.filter(r => /⏳/.test(r['Status'] || '')).length;
+  const resolved = rows.filter(r => /✅/.test(r['Status'] || '')).length;
+  const other = rows.length - open - resolved;
+  return { total: rows.length, open, resolved, other };
+}
+
+function renderCustomerNeedsSummary(cn) {
+  if (!cn.total) return '<div class="dash-empty">No Customer Needs filed yet.</div>';
+  return '<div class="dash-fact-grid">' +
+    dashFactRow('Total filed', String(cn.total)) +
+    dashFactRow('Open', String(cn.open)) +
+    dashFactRow('Resolved', String(cn.resolved)) +
+    (cn.other ? dashFactRow('Other / unclear', String(cn.other)) : '') +
+    '</div>';
+}
+
+// ---------- Tasks by priority (from ACTION-TRACKER.md, which mirrors Rocketlane daily) ----------
+// CHECKLIST.md's own Milestones section only has free-text target dates, not a clean due-date
+// column, and hitting Rocketlane live needs a connector that may not be authorized this session.
+// ACTION-TRACKER.md Sections A/B carry a real "Due Date" column and are reconciled against
+// Rocketlane on a daily cadence, so they're a reliable stand-in without an extra live API call.
+const ACTION_TRACKER_PATH = 'Internal Documents/Project Management/Governance/ACTION-TRACKER.md';
+// A task lands in "High priority" when Rocketlane's own Priority field is explicitly High, OR it's
+// overdue, OR it's due within this many *business* days -- everything else (low/unset priority,
+// due further out, or no due date at all) is "Less priority".
+const HIGH_PRIORITY_DUE_BUSINESS_DAYS = 5;
+const MAX_TASKS_SHOWN = 20;
+
+function stripInlineMarkdown(text) {
+  return (text || '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\*\*/g, '').replace(/`/g, '');
+}
+
+function isTaskClosed(status) {
+  return /\*\*\s*(Completed|Fulfilled|Discarded|Resolved)/i.test(status || '') ||
+    /Rocketlane task[^.]*\b(removed|deleted|discarded)\b/i.test(status || '');
+}
+
+// A Section A/B row only represents a real, live Rocketlane task if its Source column carries a
+// rocketlane.com task link AND neither Source nor Status says that link is gone/never-was (per
+// ROCKETLANE-RECONCILIATION-RULES.md §18 -- Section A/B rows with no live Rocketlane counterpart,
+// e.g. meeting-logistics items or confirmed-deleted tasks, must not be surfaced here as if they
+// were tasks the SA needs to act on in Rocketlane).
+const ROCKETLANE_TASK_LINK_RE = /rocketlane\.com\/projects\/\d+\/tasks\/\d+/i;
+const ROCKETLANE_LINK_GONE_RE = /\b(removed|deleted|discarded|inaccessible|not[- ]found|404|403)\b/i;
+
+function hasLiveRocketlaneTask(source, status) {
+  if (!ROCKETLANE_TASK_LINK_RE.test(source || '')) return false;
+  return !ROCKETLANE_LINK_GONE_RE.test((source || '') + ' ' + (status || ''));
+}
+
+function parseDueDate(raw) {
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec((raw || '').trim());
+  return m ? { date: new Date(m[1] + 'T00:00:00'), iso: m[1] } : null;
+}
+
+function isBusinessDay(d) {
+  const g = d.getDay();
+  return g !== 0 && g !== 6;
+}
+
+// Business days strictly between `now` and `due` (both at midnight, due >= now) — 0 when due is
+// today. Used only for future due dates; overdue tasks are already High priority regardless.
+function businessDaysUntil(now, due) {
+  let count = 0;
+  const cur = new Date(now);
+  while (cur < due) {
+    cur.setDate(cur.getDate() + 1);
+    if (isBusinessDay(cur)) count++;
+  }
+  return count;
+}
+
+function isHighPriorityTask(t, now) {
+  if (/high/i.test(t.priority || '')) return true;
+  if (t.daysUntil === null) return false;
+  if (t.daysUntil < 0) return true;
+  return businessDaysUntil(now, t.due.date) <= HIGH_PRIORITY_DUE_BUSINESS_DAYS;
+}
+
+function sortByDaysUntil(a, b) {
+  if (a.daysUntil === null && b.daysUntil === null) return 0;
+  if (a.daysUntil === null) return 1;
+  if (b.daysUntil === null) return -1;
+  return a.daysUntil - b.daysUntil;
+}
+
+function parseActionTrackerSection(md, sectionRe, prefix) {
+  const rows = parseMarkdownTable(extractSection(md, sectionRe, /^##\s+[A-Z]\./));
+  return rows.map(r => ({
+    id: prefix + (r['#'] || ''),
+    text: r['Action'] || r['Request / Commitment'] || '',
+    priority: r['Priority'] || '',
+    owner: r['Owner'] || '',
+    dueRaw: r['Due Date'] || '',
+    status: r['Status'] || '',
+    source: r['Source'] || '',
+  }));
+}
+
+async function scanUpcomingTasks() {
+  const text = await fetch('../' + ACTION_TRACKER_PATH, { cache: 'no-store' })
+    .then(r => r.ok ? r.text() : Promise.reject(new Error('ACTION-TRACKER.md HTTP ' + r.status)));
+  const rows = [
+    ...parseActionTrackerSection(text, /^##\s+A\./, 'A.'),
+    ...parseActionTrackerSection(text, /^##\s+B\./, 'B.'),
+  ];
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  return rows
+    .filter(r => hasLiveRocketlaneTask(r.source, r.status))
+    .filter(r => !isTaskClosed(r.status))
+    .map(r => {
+      const due = parseDueDate(r.dueRaw);
+      const daysUntil = due ? Math.round((due.date - now) / 86400000) : null;
+      return { ...r, due, daysUntil };
+    });
+}
+
+function taskItemHtml(t) {
+  const label = t.daysUntil === null ? 'No due date'
+    : t.daysUntil < 0 ? Math.abs(t.daysUntil) + 'd overdue'
+    : t.daysUntil === 0 ? 'Due today'
+    : 'Due in ' + t.daysUntil + 'd';
+  const emoji = t.daysUntil === null ? '⚪' : t.daysUntil < 0 ? '🔴' : (t.daysUntil <= 3 ? '🟠' : '🟡');
+  const clean = stripInlineMarkdown(t.text);
+  const shortText = escapeHtml(clean.length > 130 ? clean.slice(0, 130).trim() + '…' : clean);
+  // Owner instead of a priority tag: the High/Less Priority grouping already carries priority.
+  const owner = shortOwner(t.owner);
+  const ownerTag = owner ? ' · ' + escapeHtml(owner) : '';
+  return '<a class="dash-item" href="#path=' + encodeURIComponent(ACTION_TRACKER_PATH) + '">' +
+    '<span class="dash-item-id">' + escapeHtml(t.id) + '</span>' +
+    '<span>' + emoji + '</span>' +
+    '<span class="dash-item-text">' + shortText + '</span>' +
+    '<span class="dash-item-status">' + label + ownerTag + '</span>' +
+    '</a>';
+}
+
+// Owner cells often carry an explanatory parenthetical ("<name> (per their own request...)");
+// cards only need the name(s).
+function shortOwner(owner) {
+  const clean = stripInlineMarkdown(owner || '').replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  return clean === '—' ? '' : clean;
+}
+
+function renderTaskList(tasks, emptyMessage) {
+  if (!tasks.length) {
+    return '<div class="dash-empty">' + emptyMessage + '</div>';
+  }
+  const shown = tasks.slice(0, MAX_TASKS_SHOWN);
+  let html = '<div class="dash-list">' + shown.map(taskItemHtml).join('') + '</div>';
+  if (tasks.length > shown.length) {
+    html += '<p class="dash-footnote">+ ' + (tasks.length - shown.length) + ' more in ACTION-TRACKER.md not shown here.</p>';
+  }
+  return html;
+}
+
+// ---------- New Task Candidates (ACTION-TRACKER.md Section C) ----------
+// Newly-identified Rocketlane task-creation candidates are written straight into Section C with no
+// chat approval gate (per ROCKETLANE-RECONCILIATION-RULES.md §16 step 4) -- this table is the
+// review surface instead: the SA reviews pending rows here on the Tasks tab and approves/discards
+// from there.
+function parseNewTaskCandidates(md) {
+  const rows = parseMarkdownTable(extractSection(md, /^##\s+C\./, /^##\s+[A-Z]\./));
+  return rows.map(r => ({
+    id: 'C.' + (r['#'] || ''),
+    candidate: r['Candidate'] || '',
+    taskName: r['Suggested taskName'] || '',
+    owner: r['Owner'] || '',
+    raised: r['Raised'] || '',
+    source: r['Source'] || '',
+    status: r['Status'] || '',
+  }));
+}
+
+function isCandidateClosed(status) {
+  return /(Approved|Discarded)/i.test(status || '');
+}
+
+async function scanNewTaskCandidates() {
+  const text = await fetch('../' + ACTION_TRACKER_PATH, { cache: 'no-store' })
+    .then(r => r.ok ? r.text() : Promise.reject(new Error('ACTION-TRACKER.md HTTP ' + r.status)));
+  return parseNewTaskCandidates(text);
+}
+
+function renderNewTaskCandidates(rows) {
+  const pending = rows.filter(r => !isCandidateClosed(r.status));
+  if (!pending.length) {
+    return '<div class="dash-empty">No new task candidates pending review 🎉</div>';
+  }
+  // Compact cards, no scrolling cells: the proposed Rocketlane taskName is the description; the
+  // full Candidate rationale stays in ACTION-TRACKER.md.
+  const cards = pending.map(r => {
+    const title = stripInlineMarkdown(r.taskName || r.candidate);
+    const meta = [shortOwner(r.owner), escapeHtml(r.raised), candidateSourceLink(r.source)].filter(Boolean);
+    return '<div class="dash-item" style="grid-template-columns: 44px 1fr">' +
+      '<span class="dash-item-id">' + escapeHtml(r.id) + '</span>' +
+      '<span class="dash-item-text"><a href="#path=' + encodeURIComponent(ACTION_TRACKER_PATH) + '">' +
+        escapeHtml(title) + '</a>' +
+        '<span class="dash-item-meta">' + meta.join(' · ') + '</span></span>' +
+      '</div>';
+  });
+  return '<div class="dash-list">' + cards.join('') + '</div>';
+}
+
+// First resolvable pointer in a Source cell: a repo file in backticks (opened in this viewer) or a
+// Markdown link. Sources without either (emails, DMs) get no link; the full text is in the tracker.
+function candidateSourceLink(source) {
+  const repoPath = (source || '').match(/`([^`]+\.md)`/);
+  if (repoPath && repoPath[1].includes('/')) {
+    return '<a href="#path=' + encodeURIComponent(repoPath[1]) + '">Source ↗</a>';
+  }
+  const mdLink = (source || '').match(/\[[^\]]+\]\((https?:[^)\s]+)\)/);
+  if (mdLink) {
+    return '<a href="' + escapeHtml(mdLink[1]) + '" target="_blank" rel="noopener">Source ↗</a>';
+  }
+  return '';
+}
+
+const DASHBOARD_TABS = [
+  { key: 'overview', label: 'Overview', hash: '#dashboard' },
+  { key: 'risks', label: 'Risks & Milestones', hash: '#dashboard:risks' },
+  { key: 'closed-risks', label: 'Closed Risks', hash: '#dashboard:closed-risks' },
+  { key: 'documents', label: 'Documents', hash: '#dashboard:documents' },
+  { key: 'tasks', label: 'Tasks', hash: '#dashboard:tasks' },
+];
+
+function renderDashboardTabs(active) {
+  return '<div class="dash-tabs">' + DASHBOARD_TABS.map(t =>
+    '<a class="dash-tab' + (t.key === active ? ' active' : '') + '" href="' + t.hash + '">' + t.label + '</a>'
+  ).join('') + '</div>';
+}
+
+function dashStatTile(value, label, hash, alert) {
+  return '<a class="dash-stat" href="' + hash + '">' +
+    '<div class="dash-stat-value' + (alert ? ' alert' : '') + '">' + value + '</div>' +
+    '<div class="dash-stat-label">' + label + '</div></a>';
+}
+
+async function showDashboard(tab) {
+  const activeTab = DASHBOARD_TABS.some(t => t.key === tab) ? tab : 'overview';
+  tocEl.innerHTML = '';
+  topbarPath.textContent = 'Dashboard';
+  topbarBadge.style.display = 'none';
+  docContainer.innerHTML =
+    '<div class="skeleton">' +
+      '<div class="skel-line" style="width:40%;height:26px;margin-bottom:20px"></div>' +
+      '<div class="skel-line" style="width:92%"></div>' +
+      '<div class="skel-line" style="width:85%"></div>' +
+      '<div class="skel-line" style="width:70%"></div>' +
+    '</div>';
+  markActive('__dashboard__');
+
+  try {
+    const [projectText, checklistText] = await Promise.all([
+      fetch('../PROJECT.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : Promise.reject(new Error('PROJECT.md HTTP ' + r.status))),
+      fetch('../CHECKLIST.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : Promise.reject(new Error('CHECKLIST.md HTTP ' + r.status))),
+    ]);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'doc';
+
+    if (hasUnfilledPlaceholders(projectText)) {
+      wrap.innerHTML = '<h1>Dashboard</h1><p>This repo hasn\'t been initialized yet — ' +
+        '<code>PROJECT.md</code> still has unfilled <code>{{PLACEHOLDER}}</code> values. The ' +
+        'dashboard aggregates health, open risks, and upcoming milestones once initialize mode ' +
+        'has run.</p>';
+      docContainer.innerHTML = '';
+      docContainer.appendChild(wrap);
+      return;
+    }
+
+    const header = parseHeaderBlock(projectText);
+    const quickFacts = parseMarkdownTable(extractSection(projectText, /^###\s+Quick Facts/, /^###\s|^##\s/));
+    const allRiskRows = parseMarkdownTable(extractSection(checklistText, /^##\s+D\./, /^##\s+[A-Z]\./));
+    const riskRows = allRiskRows
+      .filter(r => !/✅/.test(r['Status'] || ''))
+      .sort((a, b) => severityRank(a['Severity']) - severityRank(b['Severity']));
+    const closedRiskRows = allRiskRows.filter(r => /✅\s*Closed/.test(r['Status'] || ''));
+    const acceptedRiskRows = allRiskRows.filter(r => /✅\s*Accepted/.test(r['Status'] || ''));
+    const registry = parseAdrBnRegister(checklistText);
+    const milestoneRows = parseMarkdownTable(extractSection(checklistText, /^##\s+E\./, /^##\s+[A-Z]\./))
+      .filter(r => !/✅/.test(r['Status'] || ''));
+
+    const statusText = findHeaderField(header, /^Status$/i);
+    const healthKey = Object.keys(header).find(k => /^Health/i.test(k));
+    const healthText = healthKey ? header[healthKey] : '';
+    const badgeSource = healthText || statusText;
+    const emoji = emojiIn(badgeSource);
+    const badgeClass = badgeClassFor(emoji);
+    const owner = findHeaderField(header, /^Owner$/i);
+    const version = findHeaderField(header, /^Version$/i);
+    const lastUpdated = findHeaderField(header, /^Last updated$/i);
+    const rocketlaneKey = Object.keys(header).find(k => /Rocketlane/i.test(k));
+    const rocketlaneVal = rocketlaneKey ? header[rocketlaneKey] : '';
+    const [docStages, upcomingTasks, atlasDocs, newTaskCandidates] = await Promise.all([
+      scanDocStages().catch(() => []),
+      scanUpcomingTasks().catch(() => []),
+      scanAtlasDocs().catch(() => []),
+      scanNewTaskCandidates().catch(() => []),
+    ]);
+    const cnSummary = customerNeedsByStatus(checklistText);
+    const docsNeedingReviewCount = docStages.reduce((sum, t) =>
+      sum + (t.stages['Drafts'] || []).length + (t.stages['Reviewed'] || []).length, 0) +
+      atlasDocs.filter(d => d.reviewed && !d.reviewed.reviewed).length;
+    const pendingAtlasCount = atlasDocs.filter(d => d.candidate.suggested && !d.approved.approved).length;
+    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+    const highPriorityTasks = upcomingTasks.filter(t => isHighPriorityTask(t, todayMidnight)).sort(sortByDaysUntil);
+    const lessPriorityTasks = upcomingTasks.filter(t => !isHighPriorityTask(t, todayMidnight)).sort(sortByDaysUntil);
+    const pendingCandidatesCount = newTaskCandidates.filter(r => !isCandidateClosed(r.status)).length;
+
+    let html = '<h1>Dashboard</h1>';
+    html += renderDashboardTabs(activeTab);
+
+    if (activeTab === 'overview') {
+      html += '<div class="dash-health-card">' +
+        '<span class="badge ' + badgeClass + '">' + (emoji || '•') + ' ' +
+          (badgeSource.split(' — ')[0].replace(/^(?:🟢|🟡|🟠|🔴)\s*/u, '').trim() || 'Status') + '</span>' +
+        '<span class="dash-health-text">' + marked.parseInline(healthText || statusText || 'No status recorded yet.') + '</span>' +
+        '</div>';
+
+      html += '<div class="dash-fact-grid">';
+      html += dashFactRow('Owner', owner);
+      html += dashFactRow('Version', version);
+      html += dashFactRow('Last updated', lastUpdated);
+      html += dashFactRow(rocketlaneKey || 'Rocketlane', rocketlaneVal);
+      quickFacts.forEach(row => {
+        if (row['Field'] && row['Value']) html += dashFactRow(row['Field'], row['Value']);
+      });
+      html += '</div>';
+
+      html += '<div class="dash-stat-grid">' +
+        dashStatTile(riskRows.length, 'Open risks', '#dashboard:risks', riskRows.length > 0) +
+        dashStatTile(milestoneRows.length, 'Upcoming milestones', '#dashboard:risks', false) +
+        dashStatTile(docsNeedingReviewCount + pendingAtlasCount, 'Docs needing attention', '#dashboard:documents', (docsNeedingReviewCount + pendingAtlasCount) > 0) +
+        dashStatTile(highPriorityTasks.length, 'High priority tasks', '#dashboard:tasks', highPriorityTasks.length > 0) +
+        dashStatTile(pendingCandidatesCount, 'New task candidates', '#dashboard:tasks', pendingCandidatesCount > 0) +
+        '</div>';
+
+      html += '<p class="dash-footnote">Pulled live from <a href="#PROJECT.md">PROJECT.md</a>\'s header and Quick Facts — ' +
+        'edit that file to change what shows here.</p>';
+
+    } else if (activeTab === 'risks') {
+      html += '<h2 id="dash-open-risks">Open Risks &amp; Issues (' + riskRows.length + ')</h2>';
+      if (riskRows.length) {
+        html += '<div class="dash-list">' +
+          riskRows.map(r => dashItem('risk', '#', 'Risk / Issue', 'Status', r, 'Severity')).join('') +
+          '</div>';
+      } else {
+        html += '<div class="dash-empty">No open risks right now 🎉</div>';
+      }
+      const resolvedRiskCount = closedRiskRows.length + acceptedRiskRows.length;
+      if (resolvedRiskCount) {
+        html += '<p class="dash-footnote" style="margin-top:-14px">' + resolvedRiskCount +
+          ' more risk' + (resolvedRiskCount === 1 ? ' is' : 's are') + ' closed or accepted — see ' +
+          '<a href="#dashboard:closed-risks">Closed Risks</a> for how each one is handled.</p>';
+      }
+
+      html += '<h2 id="dash-upcoming-milestones">Upcoming Milestones (' + milestoneRows.length + ')</h2>';
+      if (milestoneRows.length) {
+        html += '<div class="dash-list">' +
+          milestoneRows.map(r => dashItem('milestone', '#', 'Milestone', 'Status', r)).join('') +
+          '</div>';
+      } else {
+        html += '<div class="dash-empty">Nothing pending — every tracked milestone is done.</div>';
+      }
+
+      html += '<p class="dash-footnote">Pulled live from <a href="#CHECKLIST.md">CHECKLIST.md</a> Sections D/E — ' +
+        'edit that file to change what shows here.</p>';
+
+    } else if (activeTab === 'closed-risks') {
+      html += '<p>Risks that are no longer open, and how each one was resolved or will be handled so it ' +
+        'doesn\'t materialize. <strong>Closed</strong> risks were resolved by a decision, a fix, or a scope ' +
+        'change; <strong>Accepted</strong> risks are inherent constraints of the chosen model, handled by ' +
+        'the process described instead of a pending decision.</p>';
+      html += '<h2 id="dash-closed-risks">Closed (' + closedRiskRows.length + ')</h2>' + renderClosedRiskList(closedRiskRows, registry);
+      html += '<h2 id="dash-accepted-risks">Accepted (' + acceptedRiskRows.length + ')</h2>' + renderClosedRiskList(acceptedRiskRows, registry);
+      html += '<p class="dash-footnote">Pulled live from <a href="#CHECKLIST.md">CHECKLIST.md</a> Section D\'s ' +
+        '"Resolution / How it\'s handled" column — edit that file to change what shows here. Risks dismissed as ' +
+        'never having been real risks are removed from the register instead; see <a href="#JOURNAL.md">JOURNAL.md</a>.</p>';
+
+    } else if (activeTab === 'documents') {
+      if (pendingAtlasCount) {
+        html += '<a class="dash-attention" href="#approvals" style="display:block; text-decoration:none;">' +
+          '<div class="dash-attention-head">📋 Needs your attention</div>' +
+          '<div class="dash-attention-sub">' + pendingAtlasCount + ' document' +
+            (pendingAtlasCount === 1 ? '' : 's') + ' suggested for Atlas, awaiting your confirmation — open Approvals &rarr;</div>' +
+          '</a>';
+      }
+
+      html += '<h2 id="dash-documents-by-stage">Documents by Stage</h2>';
+      html += renderDocStageTable(docStages);
+      html += '<h3 id="dash-docs-needing-review">Needs SA review (Needs review / Waiting for approval)</h3>';
+      html += renderDocsNeedingReview(docStages);
+      html += '<h3 id="dash-customer-needs">Customer Needs / Feature Requests</h3>';
+      html += renderCustomerNeedsSummary(cnSummary);
+
+      html += '<p class="dash-footnote">Pulled live from the <code>ADRs/</code> and ' +
+        '<code>Behavior Notes/</code> stage folders under <code>Internal Documents/Architecture/</code>, ' +
+        'and <a href="#CHECKLIST.md">CHECKLIST.md</a> Section H — edit those to change what shows here. ' +
+        '"Needs your attention" above is a separate signal (Atlas candidacy, ' +
+        '<code>CLAUDE.md</code> Hard Rule 12), not document stage — see the full breakdown on ' +
+        '<a href="#approvals">Approvals</a>.</p>';
+
+    } else if (activeTab === 'tasks') {
+      html += '<h2 id="dash-new-task-candidates">New Task Candidates (' + pendingCandidatesCount + ')</h2>';
+      html += renderNewTaskCandidates(newTaskCandidates);
+      html += '<p class="dash-footnote">Pulled live from ' +
+        '<a href="#path=' + encodeURIComponent(ACTION_TRACKER_PATH) + '">ACTION-TRACKER.md</a> ' +
+        'Section C — newly-identified Rocketlane task candidates land here automatically, with no ' +
+        'chat approval needed for this write; review and approve/discard each row here.</p>';
+
+      html += '<h2 id="dash-high-priority-tasks">High Priority (' + highPriorityTasks.length + ')</h2>';
+      html += renderTaskList(highPriorityTasks, 'Nothing high priority right now 🎉');
+
+      html += '<h2 id="dash-less-priority-tasks">Less Priority (' + lessPriorityTasks.length + ')</h2>';
+      html += renderTaskList(lessPriorityTasks, 'Nothing else tracked right now.');
+
+      html += '<p class="dash-footnote">Pulled live from ' +
+        '<a href="#path=' + encodeURIComponent(ACTION_TRACKER_PATH) + '">ACTION-TRACKER.md</a> — ' +
+        'due dates come from its daily Rocketlane mirror, not a live Rocketlane call. Only rows with ' +
+        'a live, linked Rocketlane task are shown here; ledger-only rows with no Rocketlane ' +
+        'counterpart (see ROCKETLANE-RECONCILIATION-RULES.md §18) are tracked in the file but not ' +
+        'surfaced as tasks. <strong>High Priority</strong> = Rocketlane Priority is explicitly High, ' +
+        'or overdue, or due within ' + HIGH_PRIORITY_DUE_BUSINESS_DAYS + ' business days; ' +
+        '<strong>Less Priority</strong> = everything else.</p>';
+    }
+
+    wrap.innerHTML = html;
+    docContainer.innerHTML = '';
+    docContainer.appendChild(wrap);
+    buildToc(wrap);
+  } catch (e) {
+    docContainer.innerHTML = '<div class="error-box">Could not build the dashboard — ' + e.message + '</div>';
+  }
+}
+
+// ---------- Approvals: every architecture doc still pending SA review, in one place ----------
+async function showApprovals() {
+  tocEl.innerHTML = '';
+  topbarPath.textContent = 'Approvals';
+  topbarBadge.style.display = 'none';
+  docContainer.innerHTML =
+    '<div class="skeleton">' +
+      '<div class="skel-line" style="width:40%;height:26px;margin-bottom:20px"></div>' +
+      '<div class="skel-line" style="width:92%"></div>' +
+      '<div class="skel-line" style="width:85%"></div>' +
+    '</div>';
+  markActive('__approvals__');
+
+  try {
+    const [types, docs] = await Promise.all([scanDocStages(), scanAtlasDocs()]);
+    const counts = approvalCounts(types, docs);
+    const unreviewed = counts.topicDocs;
+    const pendingList = (list, action) => list.length
+      ? '<div class="dash-list">' + list.map(d =>
+          '<a class="dash-item" style="grid-template-columns: minmax(0, 1fr) minmax(0, max-content)" href="#path=' + encodeURIComponent(d.path) + '">' +
+            '<span class="dash-item-text">' + escapeHtml(d.title) + '</span>' +
+            '<span class="dash-item-status">' + action + ' &rarr;</span>' +
+          '</a>'
+        ).join('') + '</div>'
+      : '<div class="dash-empty">Nothing waiting on you here 🎉</div>';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'doc';
+    let html = '<h1>Approvals</h1>' +
+      '<p>Two independent things live here (CLAUDE.md Hard Rule 12): <strong>review</strong> — is ' +
+      'this document a confirmed, real record (ADRs/Behavior Notes: folder location; Topic ' +
+      'Analysis: its own <code>Reviewed by SA</code> field) — and <strong>Atlas relevance</strong> ' +
+      '— does its content belong in VTEX\'s shared Atlas knowledge base, tracked separately via ' +
+      '<code>Atlas candidate</code>/<code>Atlas approved</code>.</p>';
+
+    html += '<div class="dash-attention"><strong>' + counts.total + ' waiting on you</strong> — ' +
+      '<a href="#needs-review">' + counts.drafts + ' ADR/BN draft' + (counts.drafts === 1 ? '' : 's') + '</a> · ' +
+      '<a href="#needs-review-topic">' + counts.topicDocs.length + ' Topic Analysis</a> · ' +
+      '<a href="#atlas-awaiting">' + counts.atlasDocs.length + ' Atlas suggestion' + (counts.atlasDocs.length === 1 ? '' : 's') + '</a>' +
+      '</div>';
+
+    html += '<h2 id="needs-review">ADR/BN drafts — needs your review (' + counts.drafts + ')</h2>' + renderDocsNeedingReview(types);
+
+    html += '<h2 id="needs-review-topic">Topic Analysis — pending review (' + unreviewed.length + ')</h2>';
+    html += pendingList(unreviewed, 'Review');
+
+    html += '<h2 id="atlas-awaiting">Atlas — suggested, awaiting your confirmation (' + counts.atlasDocs.length + ')</h2>';
+    html += pendingList(counts.atlasDocs, 'Confirm or discard');
+
+    html += '<h2 id="stage-counts">ADRs/Behavior Notes by stage</h2>' + renderDocStageTable(types);
+
+    html += '<h2 id="atlas-candidates">Atlas candidates</h2>';
+    html += '<p>Every Accepted ADR/Behavior Note and Topic Analysis doc, mapped against the two ' +
+      'Atlas fields — <code>Atlas approved</code> is what actually makes a document Atlas-eligible.</p>';
+    if (docs.length) {
+      html += '<div class="table-scroll"><table><thead><tr><th>Document</th>' +
+        '<th>Reviewed by SA</th><th>Atlas candidate</th><th>Atlas approved</th></tr></thead><tbody>';
+      docs.forEach(d => {
+        const reviewBadge = d.closed ? '<span class="badge">🗂️ ' + escapeHtml(d.closed) + '</span>' :
+          !d.reviewed ? '<span class="badge">— (folder-based)</span>' :
+          d.reviewed.reviewed ? '<span class="badge ok">✅ Reviewed</span>' : '<span class="badge warn">⏳ Pending</span>';
+        const candBadge = d.candidate.suggested ? '<span class="badge warn">🤖 Suggested</span>' :
+          d.candidate.rejected ? '<span class="badge">🚫 Not worthy</span>' :
+          '<span class="badge">— Not yet assessed</span>';
+        const apprBadge = d.approved.approved ? '<span class="badge ok">✅ Approved</span>' : '<span class="badge">— Not yet</span>';
+        html += '<tr><td><a href="#path=' + encodeURIComponent(d.path) + '">' + escapeHtml(d.title) + '</a></td>' +
+          '<td>' + reviewBadge + '</td><td>' + candBadge + '</td><td>' + apprBadge + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<div class="dash-empty">No Accepted documents yet.</div>';
+    }
+
+    wrap.innerHTML = html;
+    docContainer.innerHTML = '';
+    docContainer.appendChild(wrap);
+    buildToc(wrap);
+  } catch (e) {
+    docContainer.innerHTML = '<div class="error-box">Could not build the approvals list — ' + e.message + '</div>';
+  }
+}
+
+// ---------- Item detail: drill into one risk/milestone row from the Dashboard ----------
+async function showItemDetail(kind, id) {
+  tocEl.innerHTML = '';
+  topbarPath.textContent = 'Dashboard / ' + (kind === 'risk' ? 'Risk ' : 'Milestone ') + id;
+  topbarBadge.style.display = 'none';
+  docContainer.innerHTML =
+    '<div class="skeleton">' +
+      '<div class="skel-line" style="width:40%;height:26px;margin-bottom:20px"></div>' +
+      '<div class="skel-line" style="width:92%"></div>' +
+      '<div class="skel-line" style="width:85%"></div>' +
+    '</div>';
+  markActive('__dashboard__');
+
+  try {
+    const checklistText = await fetch('../CHECKLIST.md', { cache: 'no-store' })
+      .then(r => r.ok ? r.text() : Promise.reject(new Error('CHECKLIST.md HTTP ' + r.status)));
+
+    const sectionRe = kind === 'risk' ? /^##\s+D\./ : /^##\s+E\./;
+    const rows = parseMarkdownTable(extractSection(checklistText, sectionRe, /^##\s+[A-Z]\./));
+    const row = rows.find(r => r['#'] === id);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'doc';
+
+    if (!row) {
+      wrap.innerHTML = '<h1>' + (kind === 'risk' ? 'Risk' : 'Milestone') + ' ' + id + '</h1>' +
+        '<p>Not found in <code>CHECKLIST.md</code> anymore — it may have been renumbered or ' +
+        'removed. <a href="#dashboard:risks">Back to Dashboard</a>.</p>';
+      docContainer.innerHTML = '';
+      docContainer.appendChild(wrap);
+      return;
+    }
+
+    let html = '<p><a href="#dashboard:risks">&larr; Dashboard</a></p>';
+    html += '<h1>' + (kind === 'risk' ? 'Risk' : 'Milestone') + ' ' + id + '</h1>';
+    html += '<div class="dash-fact-grid" style="margin-top:20px">';
+    Object.keys(row).forEach(key => {
+      if (key === '#') return;
+      html += dashFactRow(key, row[key]);
+    });
+    // Risks routinely name the ADR/BN that explains how they're being mitigated -- surface those
+    // as clickable links rather than leaving them as inert text buried in the Notes column.
+    if (kind === 'risk') {
+      try {
+        html += renderRelatedDocs(row, parseAdrBnRegister(checklistText));
+      } catch (e) {
+        // The ADR/BN register may not exist yet on a fresh/template repo -- related-docs is a
+        // bonus, not core to showing the risk itself, so fail quietly here.
+      }
+    }
+    html += '</div>';
+    html += '<p class="dash-footnote">From <a href="#CHECKLIST.md">CHECKLIST.md</a>\'s ' +
+      (kind === 'risk' ? 'Open Risks &amp; Issues' : 'Milestones') + ' section — edit that file ' +
+      'to change what shows here.</p>';
+
+    wrap.innerHTML = html;
+    docContainer.innerHTML = '';
+    docContainer.appendChild(wrap);
+  } catch (e) {
+    docContainer.innerHTML = '<div class="error-box">Could not load this item — ' + e.message + '</div>';
+  }
+}
+
+// ---------- Diagram fullscreen modal: click a rendered Mermaid diagram to expand, zoom, pan ----------
+const diagramModal = document.getElementById('diagram-modal');
+const diagramCanvas = document.getElementById('diagram-modal-canvas');
+let diagramSvg = null;
+let diagramScale = 1, diagramX = 0, diagramY = 0;
+let isDraggingDiagram = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+
+function applyDiagramTransform() {
+  if (!diagramSvg) return;
+  diagramSvg.style.transform =
+    'translate(calc(-50% + ' + diagramX + 'px), calc(-50% + ' + diagramY + 'px)) scale(' + diagramScale + ')';
+}
+
+function openDiagramModal(svgEl) {
+  const clone = svgEl.cloneNode(true);
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  clone.style.maxWidth = 'none';
+  clone.style.maxHeight = 'none';
+  const old = diagramCanvas.querySelector('svg');
+  if (old) old.remove();
+  diagramCanvas.appendChild(clone);
+  diagramSvg = clone;
+  diagramScale = 1; diagramX = 0; diagramY = 0;
+  applyDiagramTransform();
+  diagramModal.classList.add('open');
+}
+
+function closeDiagramModal() {
+  diagramModal.classList.remove('open');
+}
+
+document.getElementById('diagram-close').addEventListener('click', closeDiagramModal);
+document.getElementById('diagram-zoom-in').addEventListener('click', () => {
+  diagramScale = Math.min(diagramScale * 1.25, 8);
+  applyDiagramTransform();
+});
+document.getElementById('diagram-zoom-out').addEventListener('click', () => {
+  diagramScale = Math.max(diagramScale / 1.25, 0.2);
+  applyDiagramTransform();
+});
+document.getElementById('diagram-zoom-reset').addEventListener('click', () => {
+  diagramScale = 1; diagramX = 0; diagramY = 0;
+  applyDiagramTransform();
+});
+
+diagramModal.addEventListener('click', (e) => { if (e.target === diagramModal) closeDiagramModal(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && diagramModal.classList.contains('open')) closeDiagramModal();
+});
+
+diagramCanvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  diagramScale = Math.min(Math.max(diagramScale * delta, 0.2), 8);
+  applyDiagramTransform();
+}, { passive: false });
+
+diagramCanvas.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.diagram-modal-toolbar')) return;
+  isDraggingDiagram = true;
+  diagramCanvas.classList.add('grabbing');
+  dragStartX = e.clientX; dragStartY = e.clientY;
+  panStartX = diagramX; panStartY = diagramY;
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isDraggingDiagram) return;
+  diagramX = panStartX + (e.clientX - dragStartX);
+  diagramY = panStartY + (e.clientY - dragStartY);
+  applyDiagramTransform();
+});
+window.addEventListener('mouseup', () => {
+  isDraggingDiagram = false;
+  diagramCanvas.classList.remove('grabbing');
+});
+
+// Any rendered Mermaid diagram (in any loaded doc) is clickable to expand.
+docContainer.addEventListener('click', (e) => {
+  const pre = e.target.closest('pre.mermaid');
+  if (!pre) return;
+  const svg = pre.querySelector('svg');
+  if (svg) openDiagramModal(svg);
+});
+
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
